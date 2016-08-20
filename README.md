@@ -30,6 +30,12 @@ Here is an example:
 }
 ```
 
-Screenshots:
+Screenshots
+-
 
 ![PackageManager.png](https://bitbucket.org/repo/EK6epb/images/4288307946-PackageManager.png)
+
+TODO
+-
+* Git usage
+* Better UI (Buttons shouldn't scale)
