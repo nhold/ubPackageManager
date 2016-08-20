@@ -13,3 +13,4 @@ Instructions:
 
 Screenshots:
 
+![PackageManager.png](https://bitbucket.org/repo/EK6epb/images/4288307946-PackageManager.png)
