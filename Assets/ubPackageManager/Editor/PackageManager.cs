@@ -78,7 +78,7 @@ namespace Bifrost.ubPackageManager
                 GUILayout.EndHorizontal();
 
                 // TODO: Change to is valid.
-                if (Directory.Exists(repository.URI))
+                if (Directory.Exists(repository.URI) || Repository.URIChecker.CheckURI(repository.URI) == Repository.URIChecker.URIType.GIT)
                 {
                     if (GUILayout.Button("Update"))
                     {
@@ -149,8 +149,13 @@ namespace Bifrost.ubPackageManager
 
         private void AddRepo()
         {
+            // TODO: Allow customisation of this.
             string uri = EditorUtility.OpenFolderPanel("Repo", "", "");
-            repository = new Repository(uri, "OneRepo");
+
+            if (string.IsNullOrEmpty(uri))
+                uri = "https://nhold@bitbucket.org/bifroststudios/packagerepo.git";
+
+            repository = new Repository(uri, "TwoRepo");
             repository.ExecuteUpdate(REPO_TEMP_DIR);
 
             if (!Directory.Exists(REPO_DIR))

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -109,7 +110,48 @@ namespace Bifrost.ubPackageManager
 
             if (URIChecker.CheckURI(URI) == URIChecker.URIType.GIT)
             {
-                // Clone to repodir.
+                finalURI = tempDirectory + "/" + name;
+
+                ProcessStartInfo gitInfo = new ProcessStartInfo();
+                gitInfo.CreateNoWindow = false;
+                gitInfo.RedirectStandardError = true;
+                gitInfo.RedirectStandardOutput = true;
+                gitInfo.WorkingDirectory = finalURI;
+                gitInfo.FileName = "C:\\Program Files (x86)\\Git\\bin\\git.exe";
+                gitInfo.UseShellExecute = false;
+                Process gitProcess = new Process();
+
+                if (!Directory.Exists(finalURI))
+                {
+                    Directory.CreateDirectory(finalURI);
+                    gitInfo.Arguments = "clone " + uri;
+                }
+                else
+                {
+                    gitInfo.Arguments = "pull";
+                }
+
+                gitProcess.StartInfo = gitInfo;
+                gitProcess.Start();
+
+                string stderr_str = gitProcess.StandardError.ReadToEnd();
+                string stdout_str = gitProcess.StandardOutput.ReadToEnd();
+
+                gitProcess.WaitForExit();
+                gitProcess.Close();
+
+                UnityEngine.Debug.Log(stdout_str);
+                UnityEngine.Debug.LogError(stderr_str);
+
+                foreach (var str in Directory.GetFiles(finalURI + "/packagerepo"))
+                {
+                    if (str.Contains(".json"))
+                    {
+                        Package pack = new Package();
+                        JsonUtility.FromJsonOverwrite(File.ReadAllText(str), pack);
+                        packages.Add(pack);
+                    }
+                }
             }
         }
 
