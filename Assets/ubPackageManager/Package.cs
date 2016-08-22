@@ -44,11 +44,11 @@ namespace Bifrost.ubPackageManager
                 }
             }
 
-            /*if(Repository.URIChecker.CheckURI(location) == Repository.URIChecker.URIType.GIT)
+            if(Repository.URIChecker.CheckURI(location) == Repository.URIChecker.URIType.GIT)
             {
                 // Clone to temp dir
 
-            }*/
+            }
         }
     }
 }
