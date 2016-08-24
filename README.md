@@ -6,7 +6,7 @@ A self updating Unity based package manager.
 Instructions:
 -
 
-0. Download from [*here*](https://bitbucket.org/bifroststudios/ubpackagemanager/downloads/ubPackageManagerV1.0.unitypackage)
+0. Download from [*here*](https://bitbucket.org/bifroststudios/ubpackagemanager/downloads/ubPackageManager1.1.unitypackage)
 1. Add a package repo (Either a directory or git repo)
 2. Add a ssh key if some repos are private
 3. Click Update Package Repository
