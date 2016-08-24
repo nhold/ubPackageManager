@@ -59,3 +59,4 @@ Screenshots
 TODO
 -
 * Better UI (Buttons shouldn't scale)
+* Uninstall option
