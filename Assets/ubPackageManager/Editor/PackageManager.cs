@@ -42,12 +42,15 @@ namespace Bifrost.ubPackageManager
 
         private void InitialiseRepos()
         {
-            foreach (var str in Directory.GetFiles(REPO_DIR))
+            if (Directory.Exists(REPO_DIR))
             {
-                Repository repo = new Repository("","");
-                JsonUtility.FromJsonOverwrite(File.ReadAllText(str), repo);
-                repository = repo;
-                break;
+                foreach (var str in Directory.GetFiles(REPO_DIR))
+                {
+                    Repository repo = new Repository("", "");
+                    JsonUtility.FromJsonOverwrite(File.ReadAllText(str), repo);
+                    repository = repo;
+                    break;
+                }
             }
         }
 

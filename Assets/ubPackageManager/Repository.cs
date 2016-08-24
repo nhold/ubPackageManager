@@ -112,36 +112,11 @@ namespace Bifrost.ubPackageManager
             {
                 finalURI = tempDirectory + "/" + name;
 
-                ProcessStartInfo gitInfo = new ProcessStartInfo();
-                gitInfo.CreateNoWindow = false;
-                gitInfo.RedirectStandardError = true;
-                gitInfo.RedirectStandardOutput = true;
-                gitInfo.WorkingDirectory = finalURI;
-                gitInfo.FileName = "C:\\Program Files (x86)\\Git\\bin\\git.exe";
-                gitInfo.UseShellExecute = false;
-                Process gitProcess = new Process();
-
-                if (!Directory.Exists(finalURI))
-                {
-                    Directory.CreateDirectory(finalURI);
-                    gitInfo.Arguments = "clone " + uri;
-                }
-                else
-                {
-                    gitInfo.Arguments = "pull";
-                }
-
-                gitProcess.StartInfo = gitInfo;
-                gitProcess.Start();
-
-                string stderr_str = gitProcess.StandardError.ReadToEnd();
-                string stdout_str = gitProcess.StandardOutput.ReadToEnd();
-
-                gitProcess.WaitForExit();
-                gitProcess.Close();
-
-                UnityEngine.Debug.Log(stdout_str);
-                UnityEngine.Debug.LogError(stderr_str);
+                string stdOut;
+                string stdError;
+                GitUpdateRepo(finalURI, uri, out stdOut, out stdError);
+                UnityEngine.Debug.Log(stdOut);
+                UnityEngine.Debug.LogError(stdError);
 
                 foreach (var str in Directory.GetFiles(finalURI + "/packagerepo"))
                 {
@@ -171,7 +146,7 @@ namespace Bifrost.ubPackageManager
                         InstallPackage(temp, pluginDir, packName, alreadyInstalled);
                     }
                 }
-
+                installedPackages.Remove(packageToInstall);
                 installedPackages.Add(packageToInstall);
                 packageToInstall.Install(temp, pluginDir);
             }
@@ -182,6 +157,7 @@ namespace Bifrost.ubPackageManager
             return packages.FirstOrDefault(pack => pack.name == name);
         }
 
+        // HACK: Pull this into a file IO helper.
         public static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs = true)
         {
             // Get the subdirectories for the specified directory.
@@ -214,10 +190,44 @@ namespace Bifrost.ubPackageManager
             {
                 foreach (DirectoryInfo subdir in dirs)
                 {
+                    // HACK: Please make this an argument.
+                    if (subdir.Name == "Plugins")
+                        return;
+
                     string temppath = Path.Combine(destDirName, subdir.Name);
                     DirectoryCopy(subdir.FullName, temppath, copySubDirs);
                 }
             }
+        }
+
+        public static void GitUpdateRepo(string workingDirectory, string uri, out string stdout, out string stderr)
+        {
+            string arguments = "pull";
+            if (!Directory.Exists(workingDirectory))
+            {
+                Directory.CreateDirectory(workingDirectory);
+                arguments = "clone " + uri;
+            }
+
+            ProcessStartInfo gitInfo = new ProcessStartInfo();
+            gitInfo.CreateNoWindow = false;
+            gitInfo.RedirectStandardError = true;
+            gitInfo.RedirectStandardOutput = true;
+            gitInfo.WorkingDirectory = workingDirectory;
+            gitInfo.FileName = "C:\\Program Files (x86)\\Git\\bin\\git.exe";
+            gitInfo.EnvironmentVariables.Add("GIT_SSH_COMMAND", "ssh -i C:\\Users\\Nathan\\.ssh\\bitbucket");
+            gitInfo.UseShellExecute = false;
+            gitInfo.Arguments = arguments;
+
+            Process gitProcess = new Process();
+            gitProcess.StartInfo = gitInfo;
+            gitProcess.Start();
+
+            stderr = gitProcess.StandardError.ReadToEnd();
+            stdout = gitProcess.StandardOutput.ReadToEnd();
+
+            gitProcess.WaitForExit();
+            gitProcess.Close();
         }
     }
 }

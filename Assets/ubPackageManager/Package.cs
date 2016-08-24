@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine;
 
 namespace Bifrost.ubPackageManager
 {
@@ -21,15 +22,15 @@ namespace Bifrost.ubPackageManager
             string packageDirectory = pluginDirectory + "/" + parentDir + "/" + name;
             string temporaryPackageDir = tempDirectory + "/" + parentDir + "/" + name;
 
-            if (Directory.Exists(temporaryPackageDir))
-            {
-                Directory.Delete(temporaryPackageDir, true);
-            }
-
-            Directory.CreateDirectory(temporaryPackageDir);
-
             if (Repository.URIChecker.CheckURI(location) == Repository.URIChecker.URIType.DIRECTORY)
             {
+                if (Directory.Exists(temporaryPackageDir))
+                {
+                    Directory.Delete(temporaryPackageDir, true);
+                }
+
+                Directory.CreateDirectory(temporaryPackageDir);
+
                 if (Directory.Exists(location))
                 {
                     Repository.DirectoryCopy(location, temporaryPackageDir);
@@ -47,7 +48,16 @@ namespace Bifrost.ubPackageManager
             if(Repository.URIChecker.CheckURI(location) == Repository.URIChecker.URIType.GIT)
             {
                 // Clone to temp dir
-
+                string stdOut;
+                string stdError;
+                Repository.GitUpdateRepo(temporaryPackageDir, location, out stdOut, out stdError);
+                Debug.Log(stdOut);
+                Debug.LogError(stdError);
+                if (Directory.Exists(packageDirectory))
+                {
+                    Directory.Delete(packageDirectory, true);
+                }
+                Repository.DirectoryCopy(temporaryPackageDir + "/" + childDir, packageDirectory);
             }
         }
     }
