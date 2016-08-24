@@ -60,3 +60,5 @@ TODO
 -
 * Better UI (Buttons shouldn't scale)
 * Uninstall option
+* Multiple repositories saved in config
+* Settings window
