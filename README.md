@@ -1,7 +1,7 @@
 ubPackageManager
 =
 
-A unity based package manager.
+A self updating Unity based package manager.
 
 Instructions:
 -
