@@ -27,6 +27,27 @@ Here is an example:
     "description": "It's an example",
     "location": "C:/LocalDirectory/Package/",
     "parentDir": "ExampleNamespace"
+    "childDir": "copy/from/this/dir/relative/to/location",
+    "dependencies": [
+        "someDep"
+    ]
+}
+```
+
+Here is that example lined up with the definition file for this package:
+
+```
+#!javascript
+{
+    "name": "ubPackageManager",
+    "version": "1.1",
+    "description": "Unity package management.",
+    "location": "https://nhold@bitbucket.org/bifroststudios/ubpackagemanager.git",
+    "parentDir": "Bifrost",
+    "childDir": "ubpackagemanager/Assets/ubPackageManager",
+    "dependencies": [
+        "ubConfig"
+    ]
 }
 ```
 
@@ -37,5 +58,4 @@ Screenshots
 
 TODO
 -
-* Git usage
 * Better UI (Buttons shouldn't scale)
