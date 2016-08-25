@@ -202,7 +202,7 @@ namespace Bifrost.ubPackageManager
 
         public static void GitUpdateRepo(string workingDirectory, string uri, out string stdout, out string stderr)
         {
-            string arguments = "pull";
+            string arguments = "pull " + uri + " master";
             if (!Directory.Exists(workingDirectory))
             {
                 Directory.CreateDirectory(workingDirectory);
