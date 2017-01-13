@@ -54,98 +54,174 @@ namespace Bifrost.ubPackageManager
             }
         }
 
+        private bool manageRepositories = false;
         void OnGUI()
         {
             if (PackManConfig == null)
                 PackManConfig = ConfigHelper.LoadConfig<PackageManagerConfiguration>("PacmanConfig");
 
-            if (repository == null)
+            StatusBarGUI();
+
+            GUILayout.BeginHorizontal("Box");
+            if (GUILayout.Button("Manage Repositories"))
             {
-                if (GUILayout.Button("Add Repo"))
+                manageRepositories = true;
+            }
+
+            if (GUILayout.Button("Manage Packages"))
+            {
+                manageRepositories = false;
+            }
+
+            GUILayout.EndHorizontal();
+
+            if (manageRepositories)
+            {
+                RepositoryManageGUI();
+            }
+            else
+            {
+                PackageManageGUI();
+            }
+
+
+
+        }
+
+        private Vector2 scrollPackages = Vector2.zero;
+        private void PackageManageGUI()
+        {
+            if (PackManConfig != null)
+            {
+                if (PackManConfig.repositories.Count > 0)
                 {
-                    AddRepo();
+                    scrollPackages = EditorGUILayout.BeginScrollView(scrollPackages);
+                    foreach (var repo in PackManConfig.repositories)
+                    {
+                        if (repo.Packages != null && repo.Packages.Count > 0)
+                        {
+                            foreach (var pack in repo.Packages)
+                            {
+                                PackageGUI(pack, repo);
+                            }
+                        }
+                        else
+                        {
+                            GUILayout.BeginVertical("Box");
+                            GUI.color = Color.red;
+
+                            if (GUILayout.Button("Update Repo: " + repo.Name))
+                            {
+                                repo.ExecuteUpdate(PackManConfig.pluginDownloadDirectory);
+                                ubConfig.ConfigHelper.SaveConfig("PacmanConfig", PackManConfig);
+                            }
+
+                            GUI.color = Color.white;
+                            GUILayout.EndVertical();
+                        }
+                    }
+                    EditorGUILayout.EndScrollView();
+                }
+            }
+        }
+
+        private void PackageGUI(Package package, Repository repository)
+        {
+            GUILayout.BeginVertical("Box");
+
+            GUILayout.Label("Name: " + package.name);
+            GUILayout.Label("Description: " + package.description);
+
+            if (package.dependencies.Count > 0)
+                GUILayout.Label("Dependencies: " + String.Join(", ", package.dependencies.ToArray()));
+            else
+                GUILayout.Label("No dependencies!");
+
+            GUILayout.Label("Version: " + package.version);
+
+            if (repository.InstalledPackages.Contains(package))
+            {
+                if (GUILayout.Button("Uninstall"))
+                {
+                    repository.UnInstallPackage(PackManConfig.pluginDownloadDirectory, PackManConfig.pluginInstallDirectory, package.name);
                 }
             }
             else
             {
-                GUILayout.Label("Package Manager. Last Updated: " + PackManConfig.lastUpdated);
+                var oldPack = repository.InstalledPackages.FirstOrDefault(str => str.name == package.name);
 
-                GUILayout.BeginHorizontal();
-                GUILayout.Label(repository.URI);
-
-                if (GUILayout.Button("Change Repo"))
+                string buttonLabel = "Install";
+                if (oldPack != null && oldPack.version != package.version)
                 {
-                    AddRepo();
+                    buttonLabel = "Update Available";
                 }
 
-                GUILayout.EndHorizontal();
-
-                // TODO: Change to is valid.
-                if (Directory.Exists(repository.URI) || Repository.URIChecker.CheckURI(repository.URI) == Repository.URIChecker.URIType.GIT)
+                if (GUILayout.Button(buttonLabel))
                 {
+                    repository.InstallPackage(PackManConfig.pluginDownloadDirectory, PackManConfig.pluginInstallDirectory, package.name);
+                }
+
+            }
+
+            GUILayout.EndVertical();
+        }
+
+        private bool addingRepository = false;
+
+        private string newRepoName = "New Name";
+        private string newRepoURI = "URI";
+        private Repository repoToRemove = null;
+        private void RepositoryManageGUI()
+        {
+            if (PackManConfig != null)
+            {
+                foreach (var repos in PackManConfig.repositories)
+                {
+                    GUILayout.BeginVertical("Box");
+                    GUILayout.Label("Name: " + repos.Name);
+                    GUILayout.Label("URI: " + repos.URI);
+                    GUILayout.Label("Last Updated: " + repos.LastUpdated);
+                    if (repos.Packages != null)
+                        GUILayout.Label("Package Count: " + repos.Packages.Count);
+
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Remove"))
+                    {
+                        repoToRemove = repos;
+                    }
+
                     if (GUILayout.Button("Update"))
                     {
-                        repository.ExecuteUpdate(REPO_TEMP_DIR);
+                        repos.ExecuteUpdate(PackManConfig.pluginDownloadDirectory);
+                        ubConfig.ConfigHelper.SaveConfig("PacmanConfig", PackManConfig);
                     }
 
-                    scrollPosition = GUILayout.BeginScrollView(scrollPosition);
-                    foreach (var package in repository.Packages)
-                    {
-                        GUILayout.BeginVertical("Box");
-
-                        GUILayout.BeginHorizontal();
-
-                        GUILayout.BeginVertical();
-                        GUILayout.Label("Name: " + package.name);
-                        GUILayout.Label("Description: " + package.description);
-
-                        if (package.dependencies.Count > 0)
-                            GUILayout.Label("Dependencies: " + String.Join(", ", package.dependencies.ToArray()));
-                        else
-                            GUILayout.Label("No dependencies!");
-
-                        GUILayout.Label("Version: " + package.version);
-                        GUILayout.EndVertical();
-
-                        GUILayout.BeginVertical();
-                        var oldPack = repository.InstalledPackages.FirstOrDefault(str => str.name == package.name);
-                        if (oldPack == null)
-                        {
-                            if (GUILayout.Button("Install"))
-                            {
-                                repository.InstallPackage(PLUGIN_TEMP_DIRECTORY, PLUGIN_DIRECTORY, package.name);
-                                File.WriteAllText(REPO_DIR + "/" + repository.Name + ".json", JsonUtility.ToJson(repository));
-                            }
-                        }
-                        else
-                        {
-                            if(oldPack.version != package.version)
-                            {
-                                if (GUILayout.Button("Update Available"))
-                                {
-                                    repository.InstallPackage(PLUGIN_TEMP_DIRECTORY, PLUGIN_DIRECTORY, package.name);
-                                    File.WriteAllText(REPO_DIR + "/" + repository.Name + ".json", JsonUtility.ToJson(repository));
-                                }
-                            }
-                            else
-                            {
-                                GUILayout.Label("Up to date.");
-                            }
-                        }
-
-                        GUILayout.EndVertical();
-
-
-                        GUILayout.EndHorizontal();
-
-                        GUILayout.EndVertical();
-                    }
-                    GUILayout.EndScrollView();
+                    GUILayout.EndHorizontal();
+                    GUILayout.EndVertical();
                 }
-                else
+
+                if (repoToRemove != null)
                 {
-                    GUI.color = Color.red;
-                    GUILayout.Label("The repository directory doesn't exist.");
+                    PackManConfig.repositories.Remove(repoToRemove);
+                    ConfigHelper.SaveConfig("PacmanConfig", PackManConfig);
+                    repoToRemove = null;
+                }
+
+                if (GUILayout.Button("Add Repo"))
+                {
+                    addingRepository = true;
+                }
+                if (addingRepository)
+                {
+                    newRepoName = EditorGUILayout.TextField("Repo Name: ", newRepoName);
+                    newRepoURI = EditorGUILayout.TextField("Repo UI: ", newRepoURI);
+
+                    if (GUILayout.Button("Confirm"))
+                    {
+                        PackManConfig.repositories.Add(new Repository(newRepoURI, newRepoName));
+                        ConfigHelper.SaveConfig("PacmanConfig", PackManConfig);
+                        addingRepository = false;
+                    }
                 }
             }
         }
@@ -165,6 +241,27 @@ namespace Bifrost.ubPackageManager
                 Directory.CreateDirectory(REPO_DIR);
 
             File.WriteAllText(REPO_DIR + "/" + repository.Name + ".json", JsonUtility.ToJson(repository));
+        }
+
+        private void StatusBarGUI()
+        {
+            GUILayout.BeginHorizontal("Box");
+            GUILayout.BeginVertical();
+            GUILayout.Label("ubPackageManager Version: " + PackageManagerConfiguration.VERSION + ". Last Updated: " + PackManConfig.lastUpdated);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Download Directory " + PackManConfig.pluginDownloadDirectory);
+            if (GUILayout.Button("Change"))
+            {
+                string str = EditorUtility.OpenFolderPanel("Choose Download Directory", PackManConfig.pluginDownloadDirectory, "");
+                if (!String.IsNullOrEmpty(str))
+                {
+                    PackManConfig.pluginDownloadDirectory = str;
+                }
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
+            GUILayout.EndHorizontal();
+
         }
     }
 }

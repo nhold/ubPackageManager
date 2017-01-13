@@ -68,9 +68,19 @@ namespace Bifrost.ubPackageManager
                 return name;
             }
         }
+
         [SerializeField]
         private string lastUpdated;
+        public string LastUpdated
+        {
+            get
+            {
+                return lastUpdated;
+            }
+             
+        }
 
+        [SerializeField]
         private List<Package> packages = new List<Package>();
         public List<Package> Packages
         {
@@ -95,6 +105,12 @@ namespace Bifrost.ubPackageManager
 
         public void ExecuteUpdate(string tempDirectory)
         {
+            if (packages == null)
+                packages = new List<Package>();
+
+            if (installedPackages == null)
+                installedPackages = new List<Package>();
+
             packages.Clear();
             lastUpdated = DateTime.Now.ToString();
 
@@ -130,7 +146,7 @@ namespace Bifrost.ubPackageManager
             }
         }
 
-        public void InstallPackage(string temp, string pluginDir, string packageName, List<string> alreadyInstalled = null)
+        public void InstallPackage(string downloadDirectory, string pluginDir, string packageName, List<string> alreadyInstalled = null)
         {
             Package packageToInstall = FindPackageByName(packageName);
             if(packageToInstall != null)
@@ -143,12 +159,24 @@ namespace Bifrost.ubPackageManager
 
                     if (alreadyInstalled.FirstOrDefault(str => str == packName) == null)
                     {
-                        InstallPackage(temp, pluginDir, packName, alreadyInstalled);
+                        InstallPackage(downloadDirectory, pluginDir, packName, alreadyInstalled);
                     }
                 }
+
                 installedPackages.Remove(packageToInstall);
                 installedPackages.Add(packageToInstall);
-                packageToInstall.Install(temp, pluginDir);
+                packageToInstall.Install(downloadDirectory, pluginDir);
+            }
+        }
+
+        public void UnInstallPackage(string downloadDirectory, string pluginInstallDirectory, string packageName)
+        {
+            var packageToUninstall = FindPackageByName(packageName);
+
+            if (packageToUninstall != null)
+            {
+                packageToUninstall.Uninstall(downloadDirectory, pluginInstallDirectory);
+                installedPackages.Remove(packageToUninstall);
             }
         }
 
@@ -202,11 +230,15 @@ namespace Bifrost.ubPackageManager
 
         public static void GitUpdateRepo(string workingDirectory, string uri, out string stdout, out string stderr)
         {
-            string arguments = "pull " + uri + " master";
+            string arguments = "clone " + uri;
+
             if (!Directory.Exists(workingDirectory))
             {
                 Directory.CreateDirectory(workingDirectory);
-                arguments = "clone " + uri;
+            }
+            else
+            {
+                arguments = "pull origin master";
             }
 
             ProcessStartInfo gitInfo = new ProcessStartInfo();
@@ -215,7 +247,16 @@ namespace Bifrost.ubPackageManager
             gitInfo.RedirectStandardOutput = true;
             gitInfo.WorkingDirectory = workingDirectory;
             gitInfo.FileName = "C:\\Program Files (x86)\\Git\\bin\\git.exe";
-            gitInfo.EnvironmentVariables.Add("GIT_SSH_COMMAND", "ssh -i C:\\Users\\Nathan\\.ssh\\bitbucket");
+            gitInfo.EnvironmentVariables.Add("GIT_SSH_COMMAND", "ssh -i C:\\Users\\Nathan\\.ssh\\id_rsa");
+
+            string homePath = (Environment.OSVersion.Platform == PlatformID.Unix ||
+                   Environment.OSVersion.Platform == PlatformID.MacOSX)
+    ? Environment.GetEnvironmentVariable("HOME")
+    : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%");
+
+            UnityEngine.Debug.Log(homePath);
+
+            gitInfo.EnvironmentVariables.Add("HOME", homePath);
             gitInfo.UseShellExecute = false;
             gitInfo.Arguments = arguments;
 

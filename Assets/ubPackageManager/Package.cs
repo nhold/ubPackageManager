@@ -58,6 +58,20 @@ namespace Bifrost.ubPackageManager
                     Directory.Delete(packageDirectory, true);
                 }
                 Repository.DirectoryCopy(temporaryPackageDir + "/" + childDir, packageDirectory);
+
+                if (Directory.Exists(temporaryPackageDir))
+                {
+                    Directory.Delete(temporaryPackageDir, true);
+                }
+            }
+        }
+
+        public void Uninstall(string tempDirectory, string pluginDirectory)
+        {
+            string packageDirectory = pluginDirectory + "/" + parentDir + "/" + name;
+            if(Directory.Exists(packageDirectory))
+            {
+                Directory.Delete(packageDirectory, true);
             }
         }
     }
