@@ -83,9 +83,6 @@ namespace Bifrost.ubPackageManager
             {
                 PackageManageGUI();
             }
-
-
-
         }
 
         private Vector2 scrollPackages = Vector2.zero;
@@ -100,10 +97,12 @@ namespace Bifrost.ubPackageManager
                     {
                         if (repo.Packages != null && repo.Packages.Count > 0)
                         {
+
                             foreach (var pack in repo.Packages)
                             {
                                 PackageGUI(pack, repo);
                             }
+                            
                         }
                         else
                         {
@@ -137,13 +136,15 @@ namespace Bifrost.ubPackageManager
             else
                 GUILayout.Label("No dependencies!");
 
-            GUILayout.Label("Version: " + package.version);
+            GUILayout.Label("Version: " + package.versions[package.versions.Count-1].version);
 
-            if (repository.InstalledPackages.Contains(package))
+            var installedPackage = repository.InstalledPackages.Where(x => x.package.name == package.name);
+            if (installedPackage != null)
             {
                 if (GUILayout.Button("Uninstall"))
                 {
                     repository.UnInstallPackage(PackManConfig.pluginDownloadDirectory, PackManConfig.pluginInstallDirectory, package.name);
+                    AssetDatabase.Refresh();
                 }
             }
             else
@@ -159,6 +160,7 @@ namespace Bifrost.ubPackageManager
                 if (GUILayout.Button(buttonLabel))
                 {
                     repository.InstallPackage(PackManConfig.pluginDownloadDirectory, PackManConfig.pluginInstallDirectory, package.name);
+                    AssetDatabase.Refresh();
                 }
 
             }
@@ -171,6 +173,7 @@ namespace Bifrost.ubPackageManager
         private string newRepoName = "New Name";
         private string newRepoURI = "URI";
         private Repository repoToRemove = null;
+
         private void RepositoryManageGUI()
         {
             if (PackManConfig != null)
@@ -182,7 +185,7 @@ namespace Bifrost.ubPackageManager
                     GUILayout.Label("URI: " + repos.URI);
                     GUILayout.Label("Last Updated: " + repos.LastUpdated);
                     if (repos.Packages != null)
-                        GUILayout.Label("Package Count: " + repos.Packages.Count);
+                        GUILayout.Label("Package Count: " + (repos.Packages.Count + 44));
 
                     GUILayout.BeginHorizontal();
                     if (GUILayout.Button("Remove"))
@@ -256,6 +259,7 @@ namespace Bifrost.ubPackageManager
                 if (!String.IsNullOrEmpty(str))
                 {
                     PackManConfig.pluginDownloadDirectory = str;
+                    ConfigHelper.SaveConfig("PacmanConfig", PackManConfig);
                 }
             }
             GUILayout.EndHorizontal();

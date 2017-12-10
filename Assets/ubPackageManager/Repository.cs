@@ -88,8 +88,8 @@ namespace Bifrost.ubPackageManager
         }
 
         [SerializeField]
-        private List<Package> installedPackages = new List<Package>();
-        public List<Package> InstalledPackages
+        private List<PackageInstallInfo> installedPackages = new List<PackageInstallInfo>();
+        public List<PackageInstallInfo> InstalledPackages
         {
             get
             {
@@ -109,7 +109,7 @@ namespace Bifrost.ubPackageManager
                 packages = new List<Package>();
 
             if (installedPackages == null)
-                installedPackages = new List<Package>();
+                installedPackages = new List<PackageInstallInfo>();
 
             packages.Clear();
             lastUpdated = DateTime.Now.ToString();
@@ -146,7 +146,7 @@ namespace Bifrost.ubPackageManager
             }
         }
 
-        public void InstallPackage(string downloadDirectory, string pluginDir, string packageName, List<string> alreadyInstalled = null)
+        public void InstallPackage(string downloadDirectory, string pluginDir, string packageName, int versionID = 0, List<string> alreadyInstalled = null)
         {
             Package packageToInstall = FindPackageByName(packageName);
             if(packageToInstall != null)
@@ -157,14 +157,23 @@ namespace Bifrost.ubPackageManager
                     if (alreadyInstalled == null)
                         alreadyInstalled = new List<string>();
 
+                    // TODO: Make sure versions match.
                     if (alreadyInstalled.FirstOrDefault(str => str == packName) == null)
                     {
-                        InstallPackage(downloadDirectory, pluginDir, packName, alreadyInstalled);
+                        InstallPackage(downloadDirectory, pluginDir, packName, 0, alreadyInstalled);
                     }
                 }
 
-                installedPackages.Remove(packageToInstall);
-                installedPackages.Add(packageToInstall);
+                var installed = installedPackages.Find(x => x.package == packageToInstall);
+                if(installed != null)
+                    installedPackages.Remove(installed);
+
+                installedPackages.Add(new PackageInstallInfo()
+                {
+                    package = packageToInstall,
+                    installedVersion = packageToInstall.versions[versionID]
+                });
+
                 packageToInstall.Install(downloadDirectory, pluginDir);
             }
         }
@@ -175,8 +184,10 @@ namespace Bifrost.ubPackageManager
 
             if (packageToUninstall != null)
             {
-                packageToUninstall.Uninstall(downloadDirectory, pluginInstallDirectory);
-                installedPackages.Remove(packageToUninstall);
+                packageToUninstall.Uninstall(pluginInstallDirectory);
+                var installed = installedPackages.Find(x => x.package == packageToUninstall);
+                if (installed != null)
+                    installedPackages.Remove(installed);
             }
         }
 
@@ -228,17 +239,75 @@ namespace Bifrost.ubPackageManager
             }
         }
 
+        public static string GetRepoNameFromURL(string url)
+        {
+            int nameStart = url.LastIndexOf("/");
+            int nameEnd = url.LastIndexOf(".git");
+            return url.Substring(nameStart, nameEnd - nameStart + 1);
+        }
+
         public static void GitUpdateRepo(string workingDirectory, string uri, out string stdout, out string stderr)
         {
-            string arguments = "clone " + uri;
+            ProcessStartInfo gitInfo = new ProcessStartInfo();
+            gitInfo.WorkingDirectory = workingDirectory;
 
-            if (!Directory.Exists(workingDirectory))
+            string arguments = "clone " + uri;
+            
+            if (Directory.Exists(workingDirectory))
             {
-                Directory.CreateDirectory(workingDirectory);
+                string name = GetRepoNameFromURL(uri);
+                if (Directory.Exists(workingDirectory + name))
+                {
+                    gitInfo.WorkingDirectory = workingDirectory + name;
+                    arguments = "pull " + uri;
+                }
             }
             else
             {
-                arguments = "pull origin master";
+                Directory.CreateDirectory(workingDirectory);
+            }
+
+            gitInfo.CreateNoWindow = false;
+            gitInfo.RedirectStandardError = true;
+            gitInfo.RedirectStandardOutput = true;
+            
+            gitInfo.FileName = "git";
+
+            // TODO: Figure our ssh credentials.
+            //gitInfo.EnvironmentVariables.Add("GIT_SSH_COMMAND", "ssh -i C:\\Users\\Nathan\\.ssh\\id_rsa");
+
+            string homePath = (Environment.OSVersion.Platform == PlatformID.Unix ||
+                   Environment.OSVersion.Platform == PlatformID.MacOSX)
+    ? Environment.GetEnvironmentVariable("HOME")
+    : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%");
+
+            UnityEngine.Debug.Log(homePath);
+
+            gitInfo.EnvironmentVariables.Add("HOME", homePath);
+            gitInfo.UseShellExecute = false;
+            gitInfo.Arguments = arguments;
+
+            Process gitProcess = new Process();
+            gitProcess.StartInfo = gitInfo;
+            gitProcess.Start();
+
+            stderr = gitProcess.StandardError.ReadToEnd();
+            stdout = gitProcess.StandardOutput.ReadToEnd();
+
+            gitProcess.WaitForExit();
+            gitProcess.Close();
+        }
+
+        public static void GitChangeBranch(string workingDirectory, string branch, out string stdout, out string stderr)
+        {
+
+            string arguments = "checkout " + branch;
+
+            if (!Directory.Exists(workingDirectory))
+            {
+                stdout = "Failed to checkout.";
+                stderr = "Failed to checkout.";
+                return;
             }
 
             ProcessStartInfo gitInfo = new ProcessStartInfo();
@@ -247,7 +316,7 @@ namespace Bifrost.ubPackageManager
             gitInfo.RedirectStandardOutput = true;
             gitInfo.WorkingDirectory = workingDirectory;
             gitInfo.FileName = "C:\\Program Files (x86)\\Git\\bin\\git.exe";
-            gitInfo.EnvironmentVariables.Add("GIT_SSH_COMMAND", "ssh -i C:\\Users\\Nathan\\.ssh\\id_rsa");
+            //gitInfo.EnvironmentVariables.Add("GIT_SSH_COMMAND", "ssh -i C:\\Users\\Nathan\\.ssh\\id_rsa");
 
             string homePath = (Environment.OSVersion.Platform == PlatformID.Unix ||
                    Environment.OSVersion.Platform == PlatformID.MacOSX)

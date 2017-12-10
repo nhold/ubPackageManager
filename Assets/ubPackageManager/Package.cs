@@ -6,10 +6,23 @@ using UnityEngine;
 namespace Bifrost.ubPackageManager
 {
     [Serializable]
+    public class PackageVersion
+    {
+        public string version;
+        public string branch;
+    }
+
+    public class PackageInstallInfo
+    {
+        public PackageVersion installedVersion;
+        public Package package;
+    }
+
+    [Serializable]
     public class Package
     {
         public string name;
-        public string version;
+        public List<PackageVersion> versions;
         public string description;
         public string location;
         public string parentDir;
@@ -17,61 +30,44 @@ namespace Bifrost.ubPackageManager
 
         public List<string> dependencies = new List<string>();
 
-        public void Install(string tempDirectory, string pluginDirectory)
+        public void Install(string downloadDirectory, string pluginDirectory)
         {
-            string packageDirectory = pluginDirectory + "/" + parentDir + "/" + name;
-            string temporaryPackageDir = tempDirectory + "/" + parentDir + "/" + name;
+            string packageInstallDirectory = pluginDirectory + "/" + parentDir + "/" + name;
+            string packageDownloadDirectory = downloadDirectory + "/" + parentDir + "/" + name;
 
             if (Repository.URIChecker.CheckURI(location) == Repository.URIChecker.URIType.DIRECTORY)
             {
-                if (Directory.Exists(temporaryPackageDir))
-                {
-                    Directory.Delete(temporaryPackageDir, true);
-                }
-
-                Directory.CreateDirectory(temporaryPackageDir);
-
                 if (Directory.Exists(location))
                 {
-                    Repository.DirectoryCopy(location, temporaryPackageDir);
-
-                    if (Directory.Exists(packageDirectory))
-                        Directory.Delete(packageDirectory, true);
-
-                    Repository.DirectoryCopy(temporaryPackageDir, packageDirectory);
-                    Directory.Delete(temporaryPackageDir, true);
-
-                    // AssetDatabase.Refresh(); - Add to post install on PM.
+                    Uninstall(pluginDirectory);
+                    Repository.DirectoryCopy(location, packageInstallDirectory);
                 }
             }
 
             if(Repository.URIChecker.CheckURI(location) == Repository.URIChecker.URIType.GIT)
             {
-                // Clone to temp dir
+                Debug.Log("Package directory: " + packageInstallDirectory);
+                Debug.Log("Temporary directory: " + packageDownloadDirectory);
+                Debug.Log("Location: " + location);
+
+                Uninstall(pluginDirectory);
+
                 string stdOut;
                 string stdError;
-                Repository.GitUpdateRepo(temporaryPackageDir, location, out stdOut, out stdError);
+                Repository.GitUpdateRepo(packageDownloadDirectory, location, out stdOut, out stdError);
                 Debug.Log(stdOut);
                 Debug.LogError(stdError);
-                if (Directory.Exists(packageDirectory))
-                {
-                    Directory.Delete(packageDirectory, true);
-                }
-                Repository.DirectoryCopy(temporaryPackageDir + "/" + childDir, packageDirectory);
-
-                if (Directory.Exists(temporaryPackageDir))
-                {
-                    Directory.Delete(temporaryPackageDir, true);
-                }
+ 
+                Repository.DirectoryCopy(packageDownloadDirectory + "/" + childDir, packageInstallDirectory);
             }
         }
 
-        public void Uninstall(string tempDirectory, string pluginDirectory)
+        public void Uninstall(string pluginDirectory)
         {
-            string packageDirectory = pluginDirectory + "/" + parentDir + "/" + name;
-            if(Directory.Exists(packageDirectory))
+            string packageInstallDirectory = pluginDirectory + "/" + parentDir + "/" + name;
+            if(Directory.Exists(packageInstallDirectory))
             {
-                Directory.Delete(packageDirectory, true);
+                Directory.Delete(packageInstallDirectory, true);
             }
         }
     }
