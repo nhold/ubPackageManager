@@ -95,6 +95,11 @@ namespace Bifrost.ubPackageManager
             {
                 return installedPackages;
             }
+
+            set
+            {
+                installedPackages = value;
+            }
         }
 
         public Repository(string uri, string name)

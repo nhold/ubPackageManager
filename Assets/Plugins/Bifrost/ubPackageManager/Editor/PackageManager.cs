@@ -8,6 +8,13 @@ using System.Linq;
 
 namespace Bifrost.ubPackageManager
 {
+    public class PackageInstallData
+    {
+        public Repository repository;
+        public Package package;
+        public int versionIndex;
+    }
+
     public class PackageManager : EditorWindow
     {
         static PackageManager mWindow;
@@ -136,36 +143,55 @@ namespace Bifrost.ubPackageManager
             else
                 GUILayout.Label("No dependencies!");
 
-            GUILayout.Label("Version: " + package.versions[package.versions.Count-1].version);
+            if(package.versions.Count > 0)
+                GUILayout.Label("Version: " + package.versions[package.versions.Count-1].version);
+
+            if(repository.InstalledPackages == null)
+            {
+                repository.InstalledPackages = new List<PackageInstallInfo>();
+            }
 
             var installedPackage = repository.InstalledPackages.Where(x => x.package.name == package.name);
-            if (installedPackage != null)
+
+            if (installedPackage.Count() > 0)
             {
                 if (GUILayout.Button("Uninstall"))
                 {
+                    
                     repository.UnInstallPackage(PackManConfig.pluginDownloadDirectory, PackManConfig.pluginInstallDirectory, package.name);
                     AssetDatabase.Refresh();
                 }
             }
             else
             {
-                var oldPack = repository.InstalledPackages.FirstOrDefault(str => str.name == package.name);
-
-                string buttonLabel = "Install";
-                if (oldPack != null && oldPack.version != package.version)
+                if (GUILayout.Button("Install"))
                 {
-                    buttonLabel = "Update Available";
-                }
+                    GenericMenu menu = new GenericMenu();
+                    for(int i = 0; i<package.versions.Count; i++)
+                    {
+                        var version = package.versions[i];
 
-                if (GUILayout.Button(buttonLabel))
-                {
-                    repository.InstallPackage(PackManConfig.pluginDownloadDirectory, PackManConfig.pluginInstallDirectory, package.name);
-                    AssetDatabase.Refresh();
-                }
+                        PackageInstallData data = new PackageInstallData();
+                        data.package = package;
+                        data.versionIndex = i;
+                        data.repository = repository;
 
+                        menu.AddItem(new GUIContent("Branch: " + version.branch + " Version: " + version.version), false, Install, data);
+                    }
+                    menu.ShowAsContext();
+                    
+                }
             }
 
             GUILayout.EndVertical();
+        }
+
+        private void Install(object userData)
+        {
+            var actualData = userData as PackageInstallData;
+
+            actualData.repository.InstallPackage(PackManConfig.pluginDownloadDirectory, PackManConfig.pluginInstallDirectory, actualData.package.name, actualData.versionIndex);
+            AssetDatabase.Refresh();
         }
 
         private bool addingRepository = false;
@@ -185,7 +211,7 @@ namespace Bifrost.ubPackageManager
                     GUILayout.Label("URI: " + repos.URI);
                     GUILayout.Label("Last Updated: " + repos.LastUpdated);
                     if (repos.Packages != null)
-                        GUILayout.Label("Package Count: " + (repos.Packages.Count + 44));
+                        GUILayout.Label("Package Count: " + (repos.Packages.Count));
 
                     GUILayout.BeginHorizontal();
                     if (GUILayout.Button("Remove"))
