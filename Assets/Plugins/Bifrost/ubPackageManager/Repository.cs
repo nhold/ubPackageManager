@@ -183,14 +183,14 @@ namespace Bifrost.ubPackageManager
             }
         }
 
-        public void UnInstallPackage(string downloadDirectory, string pluginInstallDirectory, string packageName)
+        public void UninstallPackage(string downloadDirectory, string pluginInstallDirectory, string packageName)
         {
             var packageToUninstall = FindPackageByName(packageName);
 
             if (packageToUninstall != null)
             {
                 packageToUninstall.Uninstall(pluginInstallDirectory);
-                var installed = installedPackages.Find(x => x.package == packageToUninstall);
+                var installed = installedPackages.Find(x => x.package.name == packageToUninstall.name);
                 if (installed != null)
                     installedPackages.Remove(installed);
             }
@@ -278,9 +278,11 @@ namespace Bifrost.ubPackageManager
             
             gitInfo.FileName = "git";
 
-            // TODO: Figure our ssh credentials.
+            // TODO: Figure out ssh credentials.
             //gitInfo.EnvironmentVariables.Add("GIT_SSH_COMMAND", "ssh -i C:\\Users\\Nathan\\.ssh\\id_rsa");
 
+            // TODO: Potentially select a default home path for download?
+            // Or use to finde the .ssh key.
             string homePath = (Environment.OSVersion.Platform == PlatformID.Unix ||
                    Environment.OSVersion.Platform == PlatformID.MacOSX)
     ? Environment.GetEnvironmentVariable("HOME")

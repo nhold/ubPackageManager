@@ -12,6 +12,7 @@ namespace Bifrost.ubPackageManager
         public string branch;
     }
 
+    [Serializable]
     public class PackageInstallInfo
     {
         public PackageVersion installedVersion;

@@ -9,6 +9,6 @@ namespace Bifrost.ubPackageManager
         public string pluginInstallDirectory = "Assets/Plugins";
         public List<Repository> repositories = new List<Repository>();
 
-        public const float VERSION = 2.0f;
+        public const float VERSION = 2f;
     }
 }

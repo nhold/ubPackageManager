@@ -31,11 +31,8 @@ namespace Bifrost.ubPackageManager
         public const string REPO_DIR = "Bifrost/Pacman/Repos/";
         public const string REPO_TEMP_DIR = "Bifrost/Pacman/Repos/";
 
-        private List<Package> packages = new List<Package>();
-
-        private Vector2 scrollPosition = Vector2.zero;
-
-        private Repository repository;
+        private bool manageRepositories = false;
+        private Vector2 scrollPackages = Vector2.zero;
 
         [MenuItem("Bifrost/Package Manager")]
         public static void GetWindow()
@@ -55,13 +52,12 @@ namespace Bifrost.ubPackageManager
                 {
                     Repository repo = new Repository("", "");
                     JsonUtility.FromJsonOverwrite(File.ReadAllText(str), repo);
-                    repository = repo;
                     break;
                 }
             }
         }
 
-        private bool manageRepositories = false;
+        
         void OnGUI()
         {
             if (PackManConfig == null)
@@ -92,7 +88,6 @@ namespace Bifrost.ubPackageManager
             }
         }
 
-        private Vector2 scrollPackages = Vector2.zero;
         private void PackageManageGUI()
         {
             if (PackManConfig != null)
@@ -157,8 +152,9 @@ namespace Bifrost.ubPackageManager
             {
                 if (GUILayout.Button("Uninstall"))
                 {
-                    
-                    repository.UnInstallPackage(PackManConfig.pluginDownloadDirectory, PackManConfig.pluginInstallDirectory, package.name);
+                    repository.UninstallPackage(PackManConfig.pluginDownloadDirectory, PackManConfig.pluginInstallDirectory, package.name);
+
+                    ConfigHelper.SaveConfig("PacmanConfig", PackManConfig);
                     AssetDatabase.Refresh();
                 }
             }
@@ -191,6 +187,9 @@ namespace Bifrost.ubPackageManager
             var actualData = userData as PackageInstallData;
 
             actualData.repository.InstallPackage(PackManConfig.pluginDownloadDirectory, PackManConfig.pluginInstallDirectory, actualData.package.name, actualData.versionIndex);
+
+            ConfigHelper.SaveConfig("PacmanConfig", PackManConfig);
+
             AssetDatabase.Refresh();
         }
 
@@ -255,28 +254,11 @@ namespace Bifrost.ubPackageManager
             }
         }
 
-        private void AddRepo()
-        {
-            // TODO: Allow customisation of this.
-            string uri = EditorUtility.OpenFolderPanel("Repo", "", "");
-
-            if (string.IsNullOrEmpty(uri))
-                uri = "https://nhold@bitbucket.org/bifroststudios/packagerepo.git";
-
-            repository = new Repository(uri, "TwoRepo");
-            repository.ExecuteUpdate(REPO_TEMP_DIR);
-
-            if (!Directory.Exists(REPO_DIR))
-                Directory.CreateDirectory(REPO_DIR);
-
-            File.WriteAllText(REPO_DIR + "/" + repository.Name + ".json", JsonUtility.ToJson(repository));
-        }
-
         private void StatusBarGUI()
         {
             GUILayout.BeginHorizontal("Box");
             GUILayout.BeginVertical();
-            GUILayout.Label("ubPackageManager Version: " + PackageManagerConfiguration.VERSION + ". Last Updated: " + PackManConfig.lastUpdated);
+            GUILayout.Label("ubPackageManager Version: " + PackageManagerConfiguration.VERSION);
             GUILayout.BeginHorizontal();
             GUILayout.Label("Download Directory " + PackManConfig.pluginDownloadDirectory);
             if (GUILayout.Button("Change"))

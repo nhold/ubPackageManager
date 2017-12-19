@@ -1,51 +1,42 @@
 ubPackageManager
 =
 
-A self updating Unity based package manager.
+A **simple** package manager for use with Unity that uses git. The only external tool is git.
 
-Instructions:
+Some quick information
+
+* Doesn't support ssh repo access.
+* Doesn't support lfs.
+* Uses git only and it must be accessible from PATH.
+* When selecting the download location for packages you cannot place it within your source for the project.
+* It creates a file `Config/PacmanConfig.json` that contains all the repository and package data for the project.
+
+Getting Started
 -
 
-0. Download from [*here*](https://bitbucket.org/bifroststudios/ubpackagemanager/downloads/ubPackageManager1.1.unitypackage)
-1. Add a package repo (Either a directory or git repo)
-2. Add a ssh key if some repos are private
-3. Click Update Package Repository
-4. Install the packages you want!
+0. Download from [*here*](https://bitbucket.org/bifroststudios/ubpackagemanager/downloads/)
+1. Once installed in your project you can open the window from: `Bifrost->Package Manager`
+2. Select a download directory by clicking the `Change` button, you can use the same directory across multiple projects if you like or a custom one per project. Select it outside of the source control of your current project
+3. Add a repository by clicking on `Manage Repositories` button and then clicking `Add Repo`
+4. Make sure to `Update` the repo to grab all packages
 
-How to create a local repo
--
-1. Create a directory
-2. Create a package definition file (.json)
+To create a repo just make a git repository and push up a group of package definition files.
 
-Here is an example:
+Here is an example of a package definition file, the name of the file must match the name in the file:
 
 ```
 #!javascript
 {
-    "name": "examplePackage",
-    "version": "2.5",
-    "description": "It's an example",
-    "location": "C:/LocalDirectory/Package/",
-    "parentDir": "ExampleNamespace"
-    "childDir": "copy/from/this/dir/relative/to/location",
-    "dependencies": [
-        "someDep"
-    ]
-}
-```
-
-Here is that example lined up with the definition file for this package:
-
-```
-#!javascript
-{
-    "name": "ubPackageManager",
-    "version": "1.1",
-    "description": "Unity package management.",
-    "location": "https://nhold@bitbucket.org/bifroststudios/ubpackagemanager.git",
+    "name": "ubGridArray",
+    "versions": [{
+        "version": "1",
+        "branch": "version-1"
+    }],
+    "description": "1D array as 2D array.",
+    "location": "https://nhold@bitbucket.org/bifroststudios/ubgridarray.git",
     "parentDir": "Bifrost",
-    "childDir": "ubpackagemanager/Assets/ubPackageManager",
-    "dependencies": [
+    "childDir": "ubgridarray/Assets/Plugins/ubGridArray"
+     "dependencies": [
         "ubConfig"
     ]
 }
@@ -55,10 +46,3 @@ Screenshots
 -
 
 ![PackageManager.png](https://bitbucket.org/repo/EK6epb/images/4288307946-PackageManager.png)
-
-TODO
--
-* Better UI (Buttons shouldn't scale)
-* Uninstall option
-* Multiple repositories saved in config
-* Settings window

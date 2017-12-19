@@ -5,12 +5,12 @@ namespace Bifrost.ubConfig
 {
     public static class ConfigHelper
     {
-        public static void SaveConfig<T>(string name, T config, string directory = "Config", string extension = ".json")
+        public static void SaveConfig<T>(string name, T config, string directory = "Config/", string extension = ".json")
         {
             File.WriteAllText(directory + name + extension, JsonUtility.ToJson(config));
         }
 
-        public static T LoadConfig<T>(string name, string directory = "Config", string extension = ".json") where T : new()
+        public static T LoadConfig<T>(string name, string directory = "Config/", string extension = ".json") where T : new()
         {
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
